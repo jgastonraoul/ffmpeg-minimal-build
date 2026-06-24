@@ -1,0 +1,145 @@
+# .github/workflows/build-ffmpeg.yml
+name: Build minimal FFmpeg
+
+on: workflow_dispatch
+
+jobs:
+  build-macos-arm64:
+    runs-on: macos-14  # Apple Silicon
+    steps:
+      - name: Install dependencies
+        run: brew install nasm pkg-config
+
+      - name: Download FFmpeg source
+        run: |
+          curl -L https://ffmpeg.org/releases/ffmpeg-6.1.tar.gz | tar xz
+          mv ffmpeg-6.1 ffmpeg-src
+
+      - name: Configure and build
+        run: |
+          cd ffmpeg-src
+          ./configure \
+            --prefix=/tmp/ffmpeg-out \
+            --disable-everything \
+            --disable-network \
+            --disable-doc \
+            --disable-htmlpages \
+            --disable-manpages \
+            --disable-podpages \
+            --disable-txtpages \
+            --enable-protocol=file \
+            --enable-demuxer=mov,mp4,matroska,avi,flv,ogg,wav,aac,mp3 \
+            --enable-decoder=aac,aac_latm,mp3,mp3float,opus,vorbis,flac,pcm_s16le,pcm_s16be,pcm_f32le,pcm_s24le \
+            --enable-encoder=pcm_s16le,flac \
+            --enable-muxer=wav,flac \
+            --enable-filter=aresample \
+            --enable-libmp3lame \
+            --enable-encoder=libmp3lame \
+            --enable-muxer=mp3
+          make -j$(nproc)
+          make install
+
+      - name: Strip binary
+        run: strip /tmp/ffmpeg-out/bin/ffmpeg
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-macos-arm64
+          path: /tmp/ffmpeg-out/bin/ffmpeg
+
+  build-macos-x64:
+    runs-on: macos-13  # Intel
+    steps:
+      - name: Install dependencies
+        run: brew install nasm pkg-config lame
+
+      - name: Download FFmpeg source
+        run: |
+          curl -L https://ffmpeg.org/releases/ffmpeg-6.1.tar.gz | tar xz
+          mv ffmpeg-6.1 ffmpeg-src
+
+      - name: Configure and build
+        run: |
+          cd ffmpeg-src
+          ./configure \
+            --prefix=/tmp/ffmpeg-out \
+            --disable-everything \
+            --disable-network \
+            --disable-doc \
+            --disable-htmlpages \
+            --disable-manpages \
+            --disable-podpages \
+            --disable-txtpages \
+            --enable-protocol=file \
+            --enable-demuxer=mov,mp4,matroska,avi,flv,ogg,wav,aac,mp3 \
+            --enable-decoder=aac,aac_latm,mp3,mp3float,opus,vorbis,flac,pcm_s16le,pcm_s16be,pcm_f32le,pcm_s24le \
+            --enable-encoder=pcm_s16le,flac \
+            --enable-muxer=wav,flac \
+            --enable-filter=aresample \
+            --enable-libmp3lame \
+            --enable-encoder=libmp3lame \
+            --enable-muxer=mp3
+          make -j$(nproc)
+          make install
+
+      - name: Strip binary
+        run: strip /tmp/ffmpeg-out/bin/ffmpeg
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-macos-x64
+          path: /tmp/ffmpeg-out/bin/ffmpeg
+
+  build-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-nasm
+            mingw-w64-x86_64-lame
+            make
+            pkg-config
+
+      - name: Download FFmpeg source
+        shell: msys2 {0}
+        run: |
+          curl -L https://ffmpeg.org/releases/ffmpeg-6.1.tar.gz | tar xz
+          mv ffmpeg-6.1 ffmpeg-src
+
+      - name: Configure and build
+        shell: msys2 {0}
+        run: |
+          cd ffmpeg-src
+          ./configure \
+            --prefix=/tmp/ffmpeg-out \
+            --target-os=mingw32 \
+            --arch=x86_64 \
+            --disable-everything \
+            --disable-network \
+            --disable-doc \
+            --disable-htmlpages \
+            --disable-manpages \
+            --disable-podpages \
+            --disable-txtpages \
+            --enable-protocol=file \
+            --enable-demuxer=mov,mp4,matroska,avi,flv,ogg,wav,aac,mp3 \
+            --enable-decoder=aac,aac_latm,mp3,mp3float,opus,vorbis,flac,pcm_s16le,pcm_s16be,pcm_f32le,pcm_s24le \
+            --enable-encoder=pcm_s16le,flac \
+            --enable-muxer=wav,flac \
+            --enable-filter=aresample \
+            --enable-libmp3lame \
+            --enable-encoder=libmp3lame \
+            --enable-muxer=mp3
+          make -j$(nproc)
+          make install
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-windows-x64
+          path: /tmp/ffmpeg-out/bin/ffmpeg.exe
