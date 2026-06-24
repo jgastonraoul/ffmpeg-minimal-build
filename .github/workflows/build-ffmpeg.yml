@@ -8,7 +8,7 @@ jobs:
     runs-on: macos-14  # Apple Silicon
     steps:
       - name: Install dependencies
-        run: brew install nasm pkg-config
+        run: brew install nasm pkg-config lame
 
       - name: Download FFmpeg source
         run: |
