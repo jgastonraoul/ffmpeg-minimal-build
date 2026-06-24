@@ -19,9 +19,14 @@ jobs:
           fi
           arch -x86_64 /usr/local/bin/brew install nasm pkg-config
 
+      - name: Download sources
+        run: |
+          curl -L https://ffmpeg.org/releases/ffmpeg-6.1.tar.gz | tar xz
+          mv ffmpeg-6.1 ffmpeg-src
+          curl -L https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz | tar xz
+
       - name: Build lame static arm64
         run: |
-          curl -L https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz | tar xz
           cd lame-3.100
           ./configure \
             --prefix=/tmp/lame-arm64 \
@@ -62,6 +67,145 @@ jobs:
             --disable-network \
             --disable-doc \
             --disable-htmlpages \
+            --disable-manpages \
+            --disable-podpages \
+            --disable-txtpages \
+            --enable-protocol=file \
+            --enable-demuxer=mov,mp4,matroska,avi,flv,ogg,wav,aac,mp3 \
+            --enable-decoder=aac,aac_latm,mp3,mp3float,opus,vorbis,flac,pcm_s16le,pcm_s16be,pcm_f32le,pcm_s24le \
+            --enable-encoder=pcm_s16le,flac \
+            --enable-muxer=wav,flac \
+            --enable-filter=aresample \
+            --enable-libmp3lame \
+            --enable-encoder=libmp3lame \
+            --enable-muxer=mp3
+          make -j$(sysctl -n hw.logicalcpu)
+          make install
+          strip /tmp/ffmpeg-arm64/bin/ffmpeg
+
+      - name: Clean ffmpeg build
+        run: cd ffmpeg-src && make clean
+
+      - name: Build ffmpeg x64
+        run: |
+          cd ffmpeg-src
+          export PKG_CONFIG_PATH="/tmp/lame-x64/lib/pkgconfig:/usr/local/lib/pkgconfig"
+          ./configure \
+            --prefix=/tmp/ffmpeg-x64 \
+            --arch=x86_64 \
+            --enable-static \
+            --disable-shared \
+            --cc="clang -arch x86_64" \
+            --extra-cflags="-arch x86_64 -I/tmp/lame-x64/include" \
+            --extra-ldflags="-arch x86_64 -L/tmp/lame-x64/lib" \
+            --disable-everything \
+            --disable-network \
+            --disable-doc \
+            --disable-htmlpages \
+            --disable-manpages \
+            --disable-podpages \
+            --disable-txtpages \
+            --enable-protocol=file \
+            --enable-demuxer=mov,mp4,matroska,avi,flv,ogg,wav,aac,mp3 \
+            --enable-decoder=aac,aac_latm,mp3,mp3float,opus,vorbis,flac,pcm_s16le,pcm_s16be,pcm_f32le,pcm_s24le \
+            --enable-encoder=pcm_s16le,flac \
+            --enable-muxer=wav,flac \
+            --enable-filter=aresample \
+            --enable-libmp3lame \
+            --enable-encoder=libmp3lame \
+            --enable-muxer=mp3
+          make -j$(sysctl -n hw.logicalcpu)
+          make install
+          strip /tmp/ffmpeg-x64/bin/ffmpeg
+
+      - name: Create Universal binary with lipo
+        run: |
+          lipo -create \
+            /tmp/ffmpeg-arm64/bin/ffmpeg \
+            /tmp/ffmpeg-x64/bin/ffmpeg \
+            -output /tmp/ffmpeg-universal
+          lipo -info /tmp/ffmpeg-universal
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ffmpeg-macos-universal
+          path: /tmp/ffmpeg-universal
+
+  build-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-nasm
+            make
+            pkg-config
+            curl
+            tar
+
+      - name: Download sources
+        shell: msys2 {0}
+        run: |
+          curl -L https://ffmpeg.org/releases/ffmpeg-6.1.tar.gz | tar xz
+          mv ffmpeg-6.1 ffmpeg-src
+          curl -L https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz | tar xz
+
+      - name: Build lame static
+        shell: msys2 {0}
+        run: |
+          cd lame-3.100
+          ./configure \
+            --prefix=/tmp/lame \
+            --enable-static \
+            --disable-shared \
+            --disable-frontend
+          make -j$(nproc)
+          make install
+
+      - name: Configure and build ffmpeg
+        shell: msys2 {0}
+        run: |
+          cd ffmpeg-src
+          export PKG_CONFIG_PATH="/tmp/lame/lib/pkgconfig:$PKG_CONFIG_PATH"
+          ./configure \
+            --prefix=C:/ffmpeg-out \
+            --target-os=mingw32 \
+            --arch=x86_64 \
+            --enable-static \
+            --disable-shared \
+            --extra-cflags="-I/tmp/lame/include" \
+            --extra-ldflags="-L/tmp/lame/lib -static" \
+            --disable-everything \
+            --disable-network \
+            --disable-doc \
+            --disable-htmlpages \
+            --disable-manpages \
+            --disable-podpages \
+            --disable-txtpages \
+            --enable-protocol=file \
+            --enable-demuxer=mov,mp4,matroska,avi,flv,ogg,wav,aac,mp3 \
+            --enable-decoder=aac,aac_latm,mp3,mp3float,opus,vorbis,flac,pcm_s16le,pcm_s16be,pcm_f32le,pcm_s24le \
+            --enable-encoder=pcm_s16le,flac \
+            --enable-muxer=wav,flac \
+            --enable-filter=aresample \
+            --enable-libmp3lame \
+            --enable-encoder=libmp3lame \
+            --enable-muxer=mp3
+          make -j$(nproc)
+          make install
+
+      - name: Strip binary
+        shell: msys2 {0}
+        run: strip C:/ffmpeg-out/bin/ffmpeg.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ffmpeg-windows-x64
+          path: C:/ffmpeg-out/bin/ffmpeg.exe            --disable-htmlpages \
             --disable-manpages \
             --disable-podpages \
             --disable-txtpages \
