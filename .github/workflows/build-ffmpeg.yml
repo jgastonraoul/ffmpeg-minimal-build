@@ -8,6 +8,8 @@ jobs:
     runs-on: macos-14  # Apple Silicon
     steps:
       - name: Install dependencies
+        env:
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
         run: brew install nasm pkg-config lame
 
       - name: Download FFmpeg source
@@ -55,6 +57,8 @@ jobs:
     runs-on: macos-13  # Intel
     steps:
       - name: Install dependencies
+        env:
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
         run: brew install nasm pkg-config lame
 
       - name: Download FFmpeg source
