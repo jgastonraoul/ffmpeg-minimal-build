@@ -18,6 +18,9 @@ jobs:
       - name: Configure and build
         run: |
           cd ffmpeg-src
+          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export LDFLAGS="-L/opt/homebrew/lib"
+          export CPPFLAGS="-I/opt/homebrew/include"
           ./configure \
             --prefix=/tmp/ffmpeg-out \
             --disable-everything \
