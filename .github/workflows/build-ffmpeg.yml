@@ -46,7 +46,7 @@ jobs:
         run: strip /tmp/ffmpeg-out/bin/ffmpeg
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ffmpeg-macos-arm64
           path: /tmp/ffmpeg-out/bin/ffmpeg
@@ -90,7 +90,7 @@ jobs:
         run: strip /tmp/ffmpeg-out/bin/ffmpeg
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ffmpeg-macos-x64
           path: /tmp/ffmpeg-out/bin/ffmpeg
@@ -142,7 +142,7 @@ jobs:
           make install
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ffmpeg-windows-x64
           path: /tmp/ffmpeg-out/bin/ffmpeg.exe
