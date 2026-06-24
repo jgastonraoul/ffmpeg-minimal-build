@@ -11,9 +11,16 @@ jobs:
         env:
           HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
         run: |
-          # brew natif arm64
+          # brew arm64 (natif)
           brew install nasm pkg-config lame
-          # brew x64 via Rosetta
+          
+          # Installe brew x64 via Rosetta si absent
+          if [ ! -f /usr/local/bin/brew ]; then
+            arch -x86_64 /bin/bash -c \
+              "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/null
+          fi
+
+          # lame x64 via brew Rosetta
           arch -x86_64 /usr/local/bin/brew install lame nasm pkg-config
 
       - name: Download FFmpeg source
