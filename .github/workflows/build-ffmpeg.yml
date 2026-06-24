@@ -123,7 +123,7 @@ jobs:
         run: |
           cd ffmpeg-src
           ./configure \
-            --prefix=/tmp/ffmpeg-out \
+            --prefix=C:/ffmpeg-out \
             --target-os=mingw32 \
             --arch=x86_64 \
             --disable-everything \
@@ -149,4 +149,4 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: ffmpeg-windows-x64
-          path: /tmp/ffmpeg-out/bin/ffmpeg.exe
+          path: C:/ffmpeg-out/bin/ffmpeg.exe
