@@ -63,7 +63,6 @@ jobs:
             --disable-shared \
             --disable-xlib \
             --disable-sdl2 \
-            --disable-x11grab \
             --extra-cflags="-arch arm64 -I/tmp/lame-arm64/include" \
             --extra-ldflags="-arch arm64 -L/tmp/lame-arm64/lib" \
             --disable-everything \
@@ -100,7 +99,6 @@ jobs:
             --disable-shared \
             --disable-xlib \
             --disable-sdl2 \
-            --disable-x11grab \
             --cc="clang -arch x86_64" \
             --extra-cflags="-arch x86_64 -I/tmp/lame-x64/include" \
             --extra-ldflags="-arch x86_64 -L/tmp/lame-x64/lib" \
